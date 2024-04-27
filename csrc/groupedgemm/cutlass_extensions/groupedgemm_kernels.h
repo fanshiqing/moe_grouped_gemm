@@ -49,8 +49,9 @@ struct CutlassGemmConfig {
     int               stages         = -1;
 };
 
-template<typename T,         /* Data Type of Input and Output Activations */
-         typename WeightType /* Weight Data Type */>
+template<typename T,            /* Data Type of Input and Output Activations */
+         typename WeightType,   /* Weight Data Type */
+         typename AccumGradType /* Data Type of Accumulated Gradient */>
 class MoeGemmRunner {
 public:
     MoeGemmRunner()
@@ -72,7 +73,6 @@ public:
                   bool         transB,
                   cudaStream_t stream);
 
-    template<typename AccumGradType /* Data Type of Accumulated Gradient */>
     void moe_gemm_backward(T*              A,
                            WeightType*     B,
                            T*              C,
@@ -109,8 +109,7 @@ private:
                   int          num_experts,
                   cudaStream_t stream);
 
-    template<typename AccumGradType /* Data Type of Accumulated Gradient */,
-             bool TransC /* Whether to transpose outputs */>
+    template<bool TransC /* Whether to transpose outputs */>
     void dispatch_to_arch_backward(T*                A,
                                    WeightType*       B,
                                    T*                C,
@@ -123,8 +122,7 @@ private:
                                    cudaStream_t      stream,
                                    int*              occupancy = nullptr);
 
-    template<typename AccumGradType /* Data Type of Accumulated Gradient */,
-             bool TransC /* Whether to transpose outputs */>
+    template<bool TransC /* Whether to transpose outputs */>
     void run_gemm_backward(T*              A,
                            WeightType*     B,
                            T*              C,

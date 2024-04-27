@@ -435,9 +435,12 @@ void dispatch_moe_gemm_to_cutlass(T*                A,
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T,
-         typename WeightType>
+         typename WeightType,
+         typename AccumGradType>
 template<bool     TransB>
-void MoeGemmRunner<T, WeightType>::dispatch_to_arch(T*                A,
+void MoeGemmRunner<T,
+                   WeightType,
+                   AccumGradType>::dispatch_to_arch(T*                A,
                                                     WeightType**      B_list,
                                                     T*                C,
                                                     int*              gemm_m_per_expert,
@@ -502,9 +505,12 @@ void MoeGemmRunner<T, WeightType>::dispatch_to_arch(T*                A,
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T,
-         typename WeightType>         
+         typename WeightType,
+         typename AccumGradType>         
 template<bool     TransB>
-void MoeGemmRunner<T, WeightType>::run_gemm(T*           A,
+void MoeGemmRunner<T,
+                   WeightType,
+                   AccumGradType>::run_gemm(T*           A,
                                             WeightType** B_list,
                                             T*           C,
                                             int*         gemm_m_per_expert,
@@ -548,8 +554,12 @@ void MoeGemmRunner<T, WeightType>::run_gemm(T*           A,
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename T, typename WeightType>
-void MoeGemmRunner<T, WeightType>::moe_gemm(T*           A,
+template<typename T,
+         typename WeightType,
+         typename AccumGradType>
+void MoeGemmRunner<T,
+                   WeightType,
+                   AccumGradType>::moe_gemm(T*           A,
                                             WeightType** B_list,
                                             T*           C,
                                             int*         gemm_m_per_expert,

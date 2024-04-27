@@ -507,10 +507,10 @@ void dispatch_moe_gemm_to_cutlass(T*                A,
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T,
-          typename WeightType>
-template <typename AccumGradType,
-          bool     TransC>
-void MoeGemmRunner<T, WeightType>::dispatch_to_arch_backward(
+          typename WeightType,
+          typename AccumGradType>
+template <bool     TransC>
+void MoeGemmRunner<T, WeightType, AccumGradType>::dispatch_to_arch_backward(
     T*                A,
     WeightType*       B,
     T*                C,
@@ -586,10 +586,10 @@ void MoeGemmRunner<T, WeightType>::dispatch_to_arch_backward(
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T,
-          typename WeightType>
-template <typename AccumGradType,
-          bool     TransC>
-void MoeGemmRunner<T, WeightType>::run_gemm_backward(
+          typename WeightType,
+          typename AccumGradType>
+template <bool     TransC>
+void MoeGemmRunner<T, WeightType, AccumGradType>::run_gemm_backward(
     T*              A,
     WeightType*     B,
     T*              C,
@@ -618,7 +618,7 @@ void MoeGemmRunner<T, WeightType>::run_gemm_backward(
     else
         chosen_config.stages = 2;
 
-    dispatch_to_arch_backward<AccumGradType, TransC>(
+    dispatch_to_arch_backward<TransC>(
         A,
         B,
         C,
@@ -637,9 +637,12 @@ void MoeGemmRunner<T, WeightType>::run_gemm_backward(
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename T, typename WeightType>
-template <typename AccumGradType>
-void MoeGemmRunner<T, WeightType>::moe_gemm_backward(T*              A,
+template <typename T,
+          typename WeightType,
+          typename AccumGradType>
+void MoeGemmRunner<T,
+                   WeightType,
+                   AccumGradType>::moe_gemm_backward(T*              A,
                                                      WeightType*     B,
                                                      T*              C,
                                                      AccumGradType** weight_grad_list,
@@ -653,14 +656,14 @@ void MoeGemmRunner<T, WeightType>::moe_gemm_backward(T*              A,
 {
     if (transC)
     {
-        run_gemm_backward<AccumGradType, true>(
+        run_gemm_backward<true>(
             A, B, C, weight_grad_list,
             gemm_m, gemm_n, gemm_k_per_expert,
             num_tokens, num_experts, stream);
     }
     else
     {
-        run_gemm_backward<AccumGradType, false>(
+        run_gemm_backward<false>(
             A, B, C, weight_grad_list,
             gemm_m, gemm_n, gemm_k_per_expert,
             num_tokens, num_experts, stream);

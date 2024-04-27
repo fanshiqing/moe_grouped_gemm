@@ -104,6 +104,7 @@ endif()
 set(moe_files pybind.cu sinkhorn.cu)
 file(GLOB moe_files ${moe_files} permute/*.cu)
 file(GLOB moe_files ${moe_files} groupedgemm/*.cu)
+file(GLOB moe_files ${moe_files} groupedgemm/cutlass_extensions/*.cu)
 
 set(LIB_NAME "moe_unit_ops")
 add_library(${LIB_NAME} SHARED ${moe_files})

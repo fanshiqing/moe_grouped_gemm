@@ -4,7 +4,7 @@
  * See LICENSE for license information.
  ************************************************************************/
 
-#include "cutlass_extensions/groupedgemm_varM_template.h"
+#include "cutlass_extensions/groupedgemm_kernels.h"
 #include "cublas_wrapper.h"
 
 using torch::Tensor;
@@ -60,7 +60,7 @@ Tensor run_group_gemm_helper(Tensor              input_activations,
     // if ((sm_ != 90) && (USE_CUBLAS == false))
     if (USE_CUBLAS == false)
     {
-        MoeGemmRunner<T, WeightType> moe_gemm_runner_;
+        MoeGemmRunner<T, WeightType, T> moe_gemm_runner_;
 
         moe_gemm_runner_.moe_gemm(input_act_ptr,
                                   fc1_expert_weights_ptr_list,
