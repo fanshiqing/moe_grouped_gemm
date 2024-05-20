@@ -84,21 +84,21 @@ subprocess.run([_cmake_bin, "--build", build_dir, "--parallel"])
 
 
 setup(
-    name="grouped_gemm",
+    name="moe_grouped_gemm",
     version="0.5",
     author="Jiang Shao, Shiqing Fan",
     author_email="jiangs@nvidia.com, shiqingf@nvidia.com",
-    description="GroupedGEMM CUDA Extension of Pytorch for MoE",
-    url="https://github.com/fanshiqing/grouped_gemm@releases/nv_grouped_gemm_v0.5",
+    description="Pytorch GroupedGEMM CUDA Extension for MoE",
+    url="https://github.com/fanshiqing/moe_grouped_gemm@dev",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
         "Operating System :: Unix",
     ],
-    package_dir={'grouped_gemm': './'},
-    packages=['grouped_gemm', 'grouped_gemm.tests'],
+    package_dir={'moe_grouped_gemm': './'},
+    packages=['moe_grouped_gemm', 'moe_grouped_gemm.tests'],
     package_data={
-    'grouped_gemm': ['csrc/build/libmoe_unit_ops.so'],
+    'moe_grouped_gemm': ['csrc/build/libmoe_unit_ops.so'],
     },
     cmdclass={"build_ext": BuildExtension},
     install_requires=["absl-py", "numpy", "torch"],
