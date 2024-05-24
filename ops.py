@@ -343,7 +343,7 @@ class GroupedGemmMoE(torch.autograd.Function):
 ##
 ################################################################################################
 
-def permute(input_act, indices, num_out_tokens=0, max_token_num=0):
+def permute(input_act, indices, num_out_tokens=-1, max_token_num=-1):
   return PermuteMoE_topK.apply(input_act, indices, num_out_tokens, max_token_num)
 
 def unpermute(input_act, row_id_map, probs):
