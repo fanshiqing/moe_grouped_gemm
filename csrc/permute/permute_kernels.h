@@ -256,41 +256,40 @@ void moe_permute_topK_kernel_launcher(
 {
     if (FWD)
     {
-        if (prob_grad == nullptr)
+        if (prob == nullptr)
         {
-            // permute_topK fwd
-            int threads = 64;
-            int blocks = (num_rows * num_topK + threads - 1) / threads;
-            moe_permute_topK_row_map<<<blocks, threads, 0, stream>>>(
-                sorted_row_id,
-                row_id_map,
-                num_rows,
-                num_topK,
-                num_out_tokens);
-
-            blocks = num_rows;
-            threads = std::min(num_cols / kElementsPerAccess, 1024);
-            moe_permute_topK_kernel<T, T, kElementsPerAccess, 128, false><<<blocks, threads, 0, stream>>>(
-                input,
-                nullptr,
-                output,
-                nullptr,
-                nullptr,
-                row_id_map,
-                num_rows,
-                num_topK,
-                num_cols);
-        }
-        else
-        {
-            // unpermute_topK bwd
-            int blocks = num_rows;
-            int threads = 32;
-            size_t smem_bytes = num_topK * sizeof(TCompute);
-
-            if (num_topK == 1)
+            if (input_fwd == nullptr)
             {
-                moe_permute_topK_kernel<T, T, kElementsPerAccess, 1, false><<<blocks, threads, 0, stream>>>(
+                // permute_topK fwd
+                int threads = 64;
+                int blocks = (num_rows * num_topK + threads - 1) / threads;
+                moe_permute_topK_row_map<<<blocks, threads, 0, stream>>>(
+                    sorted_row_id,
+                    row_id_map,
+                    num_rows,
+                    num_topK,
+                    num_out_tokens);
+
+                blocks = num_rows;
+                threads = std::min(num_cols / kElementsPerAccess, 1024);
+                moe_permute_topK_kernel<T, TCompute, kElementsPerAccess, 128, false><<<blocks, threads, 0, stream>>>(
+                    input,
+                    nullptr,
+                    output,
+                    nullptr,
+                    nullptr,
+                    row_id_map,
+                    num_rows,
+                    num_topK,
+                    num_cols);
+            }
+            else
+            {
+                // unpermute_topK bwd without probs for topK == 1
+                int blocks = num_rows;
+                int threads = 32;
+
+                moe_permute_topK_kernel<T, TCompute, kElementsPerAccess, 1, false><<<blocks, threads, 0, stream>>>(
                     input,
                     input_fwd,
                     output,
@@ -301,7 +300,15 @@ void moe_permute_topK_kernel_launcher(
                     num_topK,
                     num_cols);
             }
-            else if (num_topK <= 8)
+        }
+        else
+        {
+            // unpermute_topK bwd with probs
+            int blocks = num_rows;
+            int threads = 32;
+            size_t smem_bytes = num_topK * sizeof(TCompute);
+
+            if (num_topK <= 8)
             {
                 moe_permute_topK_kernel<T, TCompute, kElementsPerAccess, 8, true><<<blocks, threads, smem_bytes, stream>>>(
                     input,
@@ -378,22 +385,10 @@ void moe_permute_topK_kernel_launcher(
         int threads = std::min(num_cols / kElementsPerAccess, 1024);
         size_t smem_bytes = num_topK * sizeof(TCompute);
 
-
-        if (num_topK == 1)
-        {
-            // permute_topK bwd with topK==1
-            moe_recover_topK_kernel<T, T, kElementsPerAccess, false><<<blocks, threads, smem_bytes, stream>>>(
-                input,
-                output,
-                row_id_map,
-                prob,
-                num_rows,
-                num_topK,
-                num_cols);
-        }
-        else if (prob == nullptr)
+        if (prob == nullptr)
         {
             // permute_topK bwd
+            // unpermute_topK fwd without probs
             moe_recover_topK_kernel<T, TCompute, kElementsPerAccess, false><<<blocks, threads, smem_bytes, stream>>>(
                 input,
                 output,
@@ -405,7 +400,7 @@ void moe_permute_topK_kernel_launcher(
         }
         else
         {
-            // unpermute_topK fwd
+            // unpermute_topK fwd with probs
             moe_recover_topK_kernel<T, TCompute, kElementsPerAccess, true><<<blocks, threads, smem_bytes, stream>>>(
                 input,
                 output,

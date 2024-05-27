@@ -202,6 +202,8 @@ def permute_topK_test(
 
     new_probs = probs.detach()
     new_probs.requires_grad_(True)
+    if num_topK == 1:
+        new_probs = None
     new_unpermute_input = new_permute_output.detach()
     new_unpermute_input.requires_grad_(True)
 

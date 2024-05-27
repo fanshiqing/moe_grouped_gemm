@@ -122,30 +122,31 @@ class UnpermuteMoE_topK(torch.autograd.Function):
       ctx.probs = probs
       return input_act
 
+    # None probs check
+    if probs is not None:
+      if probs.is_cpu:
+        print("[Warning] The input `probs` of unpermute_topK op is on the device: CPU!", file=stderr)
+        probs = probs.cuda()
+      if probs.dtype != torch.float32:
+        print(f"[Warning] The data type of the input `probs` of unpermute_topK op is {probs.dtype}! "
+              "The recommended type is torch.float32.", file=stderr)
+        probs = probs.to(torch.float32)
+      if not probs.is_contiguous():
+        print("[Warning] The input `probs` of unpermute_topK op is discontiguous!", file=stderr)
+        probs = probs.contiguous()
+
     # Device check
     if input_act.is_cpu:
       raise RuntimeError("[Error] The input `input_act` of unpermute_topK op is on the device: CPU!")
     if row_id_map.is_cpu:
       print("[Warning] The input `row_id_map` of unpermute_topK op is on the device: CPU!", file=stderr)
       row_id_map = row_id_map.cuda()
-    if probs.is_cpu:
-      print("[Warning] The input `probs` of unpermute_topK op is on the device: CPU!", file=stderr)
-      probs = probs.cuda()
-
-    # Shape check
-    if row_id_map.size(0) != probs.size(0) * probs.size(1):
-      raise RuntimeError(f"[Error] unpermute_topK op input `probs` shape mismatch! "
-                         f"Expect {row_id_map.size(0)}, but got {probs.size(0) * probs.size(1)}.")
 
     # Data type check
     if row_id_map.dtype != torch.int32:
       print(f"[Warning] The data type of the input `row_id_map` of unpermute_topK op is {row_id_map.dtype}! "
             "The recommended type is torch.int32.", file=stderr)
       row_id_map = row_id_map.to(torch.int32)
-    if probs.dtype != torch.float32:
-      print(f"[Warning] The data type of the input `probs` of unpermute_topK op is {probs.dtype}! "
-            "The recommended type is torch.float32.", file=stderr)
-      probs = probs.to(torch.float32)
 
     # Contiguous check
     if not input_act.is_contiguous():
@@ -154,12 +155,9 @@ class UnpermuteMoE_topK(torch.autograd.Function):
     if not row_id_map.is_contiguous():
       print("[Warning] The input `row_id_map` of unpermute_topK op is discontiguous!", file=stderr)
       row_id_map = row_id_map.contiguous()
-    if not probs.is_contiguous():
-      print("[Warning] The input `probs` of unpermute_topK op is discontiguous!", file=stderr)
-      probs = probs.contiguous()
 
-    num_tokens = probs.size(0)
-    num_topK = probs.size(1)
+    num_topK = probs.size(1) if probs is not None else 1
+    num_tokens = probs.size(0) if probs is not None else row_id_map.size(0)
 
     unpermuted_output = torch.ops.moe_unit_ops.moe_recover_topK_op(
       input_act,

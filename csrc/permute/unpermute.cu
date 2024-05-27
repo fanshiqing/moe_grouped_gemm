@@ -157,12 +157,12 @@ std::tuple<Tensor, Tensor> moe_recover_topK_bwd_op(
     Tensor  row_id_map,
     Tensor  prob)
 {
-    const int num_tokens = prob.size(0);
-    const int num_topK = prob.size(1);
+    const int num_topK = (prob.defined()) ? prob.size(1) : 1;
+    const int num_tokens = (prob.defined()) ? prob.size(0) : row_id_map.size(0);
     const int num_cols = input_bwd.size(1);
 
     int *row_id_map_ptr = get_ptr<int>(row_id_map);
-    float *prob_ptr = get_ptr<float>(prob);
+    float *prob_ptr = (prob.defined()) ? get_ptr<float>(prob) : nullptr;
 
     // activations type
     const at::ScalarType _st = input_bwd.scalar_type();
