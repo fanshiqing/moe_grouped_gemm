@@ -20,14 +20,14 @@ inline void cublas_handle_init()
 
     for (int i = 0; i < NUM_STREAM; i++)
     {
-        cudaStreamCreate(&cublas_stream[i]);
+        cudaStreamCreateWithFlags(&cublas_stream[i], cudaStreamNonBlocking);
         cublasCreate(&cublas_handle[i]);
         cublasSetStream(cublas_handle[i], cublas_stream[i]);
         cudaEventCreate(&cublas_event[i]);
     }
 }
 
-inline void cublas_sync_streams(cudaStream_t stream)
+inline void cublas_current_wait_streams(cudaStream_t stream)
 {
     for (int s = 0; s < NUM_STREAM; s++)
     {
@@ -37,6 +37,16 @@ inline void cublas_sync_streams(cudaStream_t stream)
     for (int s = 0; s < NUM_STREAM; s++)
     {
         cudaStreamWaitEvent(stream, cublas_event[s]);
+    }
+}
+
+inline void cublas_streams_wait_current(cudaStream_t stream)
+{
+    cudaEventRecord(cublas_event[0], stream);
+
+    for (int s = 0; s < NUM_STREAM; s++)
+    {
+        cudaStreamWaitEvent(cublas_stream[s], cublas_event[0]);
     }
 }
 
@@ -92,6 +102,8 @@ void cublas_group_gemm_helper(
 
     int ldb = transB ? gemm_k : gemm_n;
 
+    cublas_streams_wait_current(stream);
+
     for (int e = 0; e < num_experts; e++)
     {
         int i = e % NUM_STREAM;
@@ -121,7 +133,7 @@ void cublas_group_gemm_helper(
         C = C + gemm_m_per_expert[e] * gemm_n;
     }
 
-    cublas_sync_streams(stream);
+    cublas_current_wait_streams(stream);
 }
 
 template <typename T,
@@ -195,6 +207,8 @@ void cublas_group_gemm_helper(
 
     cublasGemmAlgo_t cublas_algo = CUBLAS_GEMM_DEFAULT;
     float alpha = 1.0f;
+
+    cublas_streams_wait_current(stream);
 
     if (!transC)
     {
@@ -287,5 +301,5 @@ void cublas_group_gemm_helper(
         }
     }
 
-    cublas_sync_streams(stream);
+    cublas_current_wait_streams(stream);
 }
